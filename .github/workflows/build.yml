@@ -1,0 +1,42 @@
+name: Build Mod
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-latest, macos-14]
+        target: [Win64, Android64, MacOS]
+        exclude:
+          - os: ubuntu-latest
+            target: MacOS
+          - os: macos-14
+            target: Win64
+          - os: macos-14
+            target: Android64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: geode-sdk/build-geode-mod@main
+        with:
+          target: ${{ matrix.target }}
+          sdk: latest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ steps.build.outputs.build-output }}
+
+  combine:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: geode-sdk/build-geode-mod/combine@main
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FlyBrainAI-Mod
+          path: ${{ steps.combine.outputs.combined-output }}
